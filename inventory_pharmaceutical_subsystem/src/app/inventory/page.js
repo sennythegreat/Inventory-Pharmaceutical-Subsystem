@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase"; // Adjust path if your supabase.js is elsewhere
-import InventorySearch from "./components/inventorysearch";
-import InventoryTable from "./components/inventorytable";
+import { useState } from "react";
+import InventorySearch from "../../components/inventory/inventorysearch";
+import InventoryTable from "../../components/inventory/inventorytable";
 
 export default function InventoryPage() {
   const [medications, setMedications] = useState([]);
