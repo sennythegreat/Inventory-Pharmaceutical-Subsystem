@@ -11,10 +11,9 @@ export default function Sidebar() {
   const isActive = (path) => pathname === path;
 
   const navItems = [
-    { href: "/inventory", label: "Inventory", icon: Pill },
-    { href: "/dispense", label: "Dispense", icon: PlusCircle },
-    { href: "/restock", label: "Restock", icon: PlusCircle },
-    { href: "/transactions", label: "Transactions", icon: History },
+    { href: "/pages/inventory", label: "Inventory", icon: Pill },
+    { href: "/pages/dispense", label: "Dispense", icon: PlusCircle },
+    { href: "/pages/transactions", label: "Transactions", icon: History },
   ];
 
   return (
