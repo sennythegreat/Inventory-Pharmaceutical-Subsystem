@@ -1,42 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import InventorySearch from "../../components/inventory/inventorysearch";
 import InventoryTable from "../../components/inventory/inventorytable";
-import { createClient } from "../../lib/client";
+import { useInventory } from "../../hooks/hooks";
 
 export default function InventoryPage() {
-  const supabase = createClient();
-  const [medications, setMedications] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const { medications, isLoading, error, refresh } = useInventory();
 
   //search & filter
   const [search, setSearch] = useState("");
   const [statusFilter, setFilter] = useState("All Statuses");
-
-  //fetch medications from Supabase
-  const fetchMedications = async () => {
-    setIsLoading(true);
-    setError(null);
-
-    const { data, error: supabaseError } = await supabase
-      .from("medications")
-      .select("*");
-
-    if (supabaseError) {
-      console.error("Supabase error:", supabaseError);
-      setError("Failed to load inventory. Please try again.");
-      setMedications([]);
-    } else {
-      setMedications(data || []);
-    }
-    setIsLoading(false);
-  };
-
-  useEffect(() => {
-    fetchMedications();
-  }, []);
 
   //filter medications based on search and status filter
   const filtered = medications.filter((item) => {
@@ -61,10 +35,10 @@ export default function InventoryPage() {
   if (error) {
     return (
       <div className="flex min-h-screen bg-gray-50 items-center justify-center flex-col gap-4">
-        <p className="text-red-600">{error}</p>
+        <p className="text-red-600 font-medium">Error: {error}</p>
         <button
-          onClick={fetchMedications}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg"
+          onClick={refresh}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
         >
           Retry
         </button>
