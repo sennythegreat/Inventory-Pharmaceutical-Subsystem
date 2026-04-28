@@ -1,0 +1,7 @@
+{
+  "dependencies": {
+    "add": "^2.0.6",
+    "button": "^1.1.1",
+    "shadcn": "^4.5.0"
+  }
+}
