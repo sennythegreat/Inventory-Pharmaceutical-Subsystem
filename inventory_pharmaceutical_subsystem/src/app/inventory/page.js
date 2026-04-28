@@ -4,66 +4,71 @@ import { useState } from "react";
 import InventorySearch from "../../components/inventory/inventorysearch";
 import InventoryTable from "../../components/inventory/inventorytable";
 
-const SAMPLE_DATA = [
-  {
-    id: "MED0001",
-    name: "Paracetamol",
-    dosage: "500mg",
-    qty: 120,
-    price: 5.0,
-    expiry: "2027-03-01",
-    status: "SUFFICIENT",
-  },
-  {
-    id: "MED0002",
-    name: "Cetirizine",
-    dosage: "10mg",
-    qty: 15,
-    price: 12.5,
-    expiry: "2026-07-15",
-    status: "LOW",
-  },
-  {
-    id: "MED0003",
-    name: "Amoxicillin",
-    dosage: "250mg",
-    qty: 0,
-    price: 18.0,
-    expiry: "2026-05-20",
-    status: "OUT OF STOCK",
-  },
-  {
-    id: "MED0004",
-    name: "Ibuprofen",
-    dosage: "200mg",
-    qty: 80,
-    price: 8.0,
-    expiry: "2025-12-31",
-    status: "EXPIRING SOON",
-  },
-  {
-    id: "MED0005",
-    name: "Metformin",
-    dosage: "500mg",
-    qty: 200,
-    price: 7.5,
-    expiry: "2027-09-10",
-    status: "SUFFICIENT",
-  },
-];
-
 export default function InventoryPage() {
+  const [medications, setMedications] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  //search & filter
   const [search, setSearch] = useState("");
   const [statusFilter, setFilter] = useState("All Statuses");
 
-  const filtered = SAMPLE_DATA.filter((item) => {
+  //fetch medications from Supabase
+  const fetchMedications = async () => {
+    setIsLoading(true);
+    setError(null);
+
+    const { data, error: supabaseError } = await supabase
+      .from("medications")
+      .select("*");
+
+    if (supabaseError) {
+      console.error("Supabase error:", supabaseError);
+      setError("Failed to load inventory. Please try again.");
+      setMedications([]);
+    } else {
+      setMedications(data || []);
+    }
+    setIsLoading(false);
+  };
+
+  useEffect(() => {
+    fetchMedications();
+  }, []);
+
+  //filter medications based on search and status filter
+  const filtered = medications.filter((item) => {
     const matchSearch =
-      item.id.toLowerCase().includes(search.toLowerCase()) ||
-      item.name.toLowerCase().includes(search.toLowerCase());
+      item.id?.toLowerCase().includes(search.toLowerCase()) ||
+      item.name?.toLowerCase().includes(search.toLowerCase());
     const matchStatus =
       statusFilter === "All Statuses" || item.status === statusFilter;
     return matchSearch && matchStatus;
   });
+
+  //loading
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen bg-gray-50 items-center justify-center">
+        <p className="text-gray-500">Loading inventory...</p>
+      </div>
+    );
+  }
+
+  //display error if fetch fail
+  if (error) {
+    return (
+      <div className="flex min-h-screen bg-gray-50 items-center justify-center flex-col gap-4">
+        <p className="text-red-600">{error}</p>
+        <button
+          onClick={fetchMedications}
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen bg-gray-50 font-sans">
@@ -163,7 +168,7 @@ export default function InventoryPage() {
           </div>
         </div>
 
-        {/* Table */}
+        {/* Table - now uses real filtered data */}
         <InventoryTable data={filtered} />
       </main>
     </div>
