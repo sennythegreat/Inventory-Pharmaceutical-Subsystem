@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import InventorySearch from "../../components/inventory/inventorysearch";
-import InventoryTable from "../../components/inventory/inventorytable";
-import { useInventory } from "../../hooks/hooks";
+import InventorySearch from "../../../components/inventory/inventorysearch";
+import InventoryTable from "../../../components/inventory/inventorytable";
+import { useInventory } from "../../../hooks/hooks";
 
 export default function InventoryPage() {
   const { medications, isLoading, error, refresh } = useInventory();
