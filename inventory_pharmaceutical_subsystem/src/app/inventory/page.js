@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import InventorySearch from "./inventorysearch";
-import InventoryTable from "./inventorytable";
+import InventorySearch from "./components/inventorysearch";
+import InventoryTable from "./components/inventorytable";
 
 const SAMPLE_DATA = [
   {
