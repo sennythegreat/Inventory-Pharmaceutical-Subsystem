@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import InventorySearch from "../../../components/inventory/inventorysearch";
 import InventoryTable from "../../../components/inventory/inventorytable";
 import { useInventory } from "../../../hooks/hooks";
 
 export default function InventoryPage() {
   const { medications, isLoading, error, refresh } = useInventory();
+  const router = useRouter();
 
   //search & filter
   const [search, setSearch] = useState("");
@@ -63,9 +65,12 @@ export default function InventoryPage() {
             statusFilter={statusFilter}
             setFilter={setFilter}
           />
-          <button className="flex items-center gap-2 bg-gray-900 hover:bg-gray-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors whitespace-nowrap">
-            <span className="text-lg leading-none">⊕</span> ADD MEDICATION
-          </button>
+<button 
+  onClick={() => router.push("/pages/inventory/add")}
+  className="flex items-center gap-2 bg-gray-900 hover:bg-gray-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors whitespace-nowrap"
+>
+  <span className="text-lg leading-none">⊕</span> ADD MEDICATION
+</button>
         </div>
       </div>
 

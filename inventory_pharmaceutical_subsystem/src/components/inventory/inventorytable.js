@@ -57,12 +57,12 @@ export default function InventoryTable({ data }) {
                 </td>
                 <td className="px-6 py-4 text-gray-500">{item.dosage}</td>
                 <td className={`px-6 py-4 ${getQtyColor(item.status)}`}>
-                  {item.qty}
+                  {item.quantity || item.qty || 0}
                 </td>
                 <td className="px-6 py-4 text-gray-700">
-                  ₱{item.price.toFixed(2)}
+                  ₱{Number(item.price).toFixed(2)}
                 </td>
-                <td className="px-6 py-4 text-gray-600">{item.expiry}</td>
+                <td className="px-6 py-4 text-gray-600">{item.expiry_date || item.expiry}</td>
                 <td className="px-6 py-4">
                   <StatusBadge status={item.status} />
                 </td>
