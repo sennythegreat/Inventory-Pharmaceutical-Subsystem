@@ -22,7 +22,6 @@ export default function InventoryTable({ data }) {
               "PRICE",
               "EXPIRY DATE",
               "STATUS",
-              "ACTION",
             ].map((col) => (
               <th
                 key={col}
@@ -66,11 +65,7 @@ export default function InventoryTable({ data }) {
                 <td className="px-6 py-4">
                   <StatusBadge status={item.status} />
                 </td>
-                <td className="px-6 py-4">
-                  <button className="border border-gray-300 hover:border-blue-500 hover:text-blue-600 text-gray-600 text-xs font-semibold px-4 py-1.5 rounded transition-colors tracking-wide">
-                    RESTOCK
-                  </button>
-                </td>
+                
               </tr>
             ))
           )}

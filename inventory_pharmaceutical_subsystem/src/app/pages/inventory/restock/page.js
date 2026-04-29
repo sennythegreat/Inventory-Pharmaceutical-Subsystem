@@ -91,7 +91,7 @@ export default function RestockMedicine() {
             {/* Page Header */}
             <div className="flex items-start justify-between mb-8 border-b border-slate-200 pb-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-[#1e293b]">Restock / Add New</h1>
+                    <h1 className="text-2xl font-bold text-[#1e293b]">Replenish Medical Inventory</h1>
                     <p className="text-sm text-slate-500 mt-1">
                         Update inventory levels or register new medication entries.
                     </p>
@@ -102,7 +102,7 @@ export default function RestockMedicine() {
                         className="bg-white text-[#0f172a] hover:bg-white shadow-sm border border-slate-200 text-[10px] font-bold px-4 h-8"
                         onClick={() => router.push("/pages/inventory/restock")}
                     >
-                        RESTOCK EXISTING
+                        RESTOCK 
                     </Button>
                     <Button 
                         size="sm" 
@@ -118,9 +118,6 @@ export default function RestockMedicine() {
             {/* Form Container */}
             <Card className="max-w-2xl mx-auto border-slate-200 shadow-sm overflow-hidden">
                 <div className="bg-slate-50/50 p-4 border-b border-slate-100 flex items-center gap-3">
-                    <div className="bg-[#0f172a] p-2 rounded-md">
-                        <RefreshCcw className="w-5 h-5 text-white" />
-                    </div>
                     <div>
                         <h2 className="text-sm font-bold text-[#1e293b] tracking-wider uppercase">Inventory Replenishment</h2>
                        
@@ -160,7 +157,7 @@ export default function RestockMedicine() {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
-                                <Label className="text-[#1e293b] text-[10px] font-bold uppercase tracking-wider">Strength / Dosage</Label>
+                                <Label className="text-[#1e293b] text-[10px] font-bold uppercase tracking-wider">Dosage</Label>
                                 <Input
                                     readOnly
                                     className="bg-slate-100 border-slate-200 h-12 text-slate-500 cursor-not-allowed"
@@ -185,7 +182,7 @@ export default function RestockMedicine() {
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
-                                <Label htmlFor="price" className="text-[#1e293b] text-[10px] font-bold uppercase tracking-wider">Current Market Price (P) (Optional)</Label>
+                                <Label htmlFor="price" className="text-[#1e293b] text-[10px] font-bold uppercase tracking-wider">Current Market Price</Label>
                                 <Input
                                     id="price"
                                     type="text"

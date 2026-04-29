@@ -51,7 +51,7 @@ export default function AddMedicine() {
             {/* Page Header */}
             <div className="flex items-start justify-between mb-8 border-b border-slate-200 pb-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-[#1e293b]">Restock / Add New</h1>
+                    <h1 className="text-2xl font-bold text-[#1e293b]">Replenish Medical Inventory</h1>
                     <p className="text-sm text-slate-500 mt-1">
                         Update inventory levels or register new medication entries.
                     </p>
@@ -63,7 +63,7 @@ export default function AddMedicine() {
                         className="text-slate-400 hover:text-slate-600 hover:bg-transparent text-[10px] font-bold px-4 h-8"
                         onClick={() => router.push("/pages/inventory/restock")}
                     >
-                        RESTOCK EXISTING
+                        RESTOCK 
                     </Button>
                     <Button 
                         size="sm" 
@@ -78,9 +78,6 @@ export default function AddMedicine() {
             {/* Form Container */}
             <Card className="max-w-2xl mx-auto border-slate-200 shadow-sm overflow-hidden">
                 <div className="bg-slate-50/50 p-4 border-b border-slate-100 flex items-center gap-3">
-                    <div className="bg-[#0f172a] p-2 rounded-md">
-                        <Plus className="w-5 h-5 text-white" />
-                    </div>
                     <div>
                         <h2 className="text-sm font-bold text-[#1e293b] tracking-wider uppercase">Medication Registration</h2>
 
@@ -108,7 +105,7 @@ export default function AddMedicine() {
 
                         <div className="grid grid-cols-2 gap-6">
                             <div className="space-y-2">
-                                <Label htmlFor="dosage" className="text-[#1e293b] text-[10px] font-bold uppercase tracking-wider">Strength / Dosage (Optional)</Label>
+                                <Label htmlFor="dosage" className="text-[#1e293b] text-[10px] font-bold uppercase tracking-wider">Dosage</Label>
                                 <Input
                                     id="dosage"
                                     name="dosage"
@@ -119,7 +116,7 @@ export default function AddMedicine() {
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="quantity" className="text-[#1e293b] text-[10px] font-bold uppercase tracking-wider">Initial Registry Quantity</Label>
+                                <Label htmlFor="quantity" className="text-[#1e293b] text-[10px] font-bold uppercase tracking-wider">Quantity</Label>
                                 <Input
                                     id="quantity"
                                     name="quantity"
@@ -134,7 +131,7 @@ export default function AddMedicine() {
 
                         <div className="grid grid-cols-2 gap-6">
                             <div className="space-y-2">
-                                <Label htmlFor="price" className="text-[#1e293b] text-[10px] font-bold uppercase tracking-wider">Baseline Price (₱) (Optional)</Label>
+                                <Label htmlFor="price" className="text-[#1e293b] text-[10px] font-bold uppercase tracking-wider">Baseline Price</Label>
                                 <Input
                                     id="price"
                                     name="price"
