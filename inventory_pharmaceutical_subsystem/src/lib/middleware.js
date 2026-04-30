@@ -1,65 +1,55 @@
-import { createServerClient } from '@supabase/ssr'
-import { NextResponse } from 'next/server';
+//Next.js root middleware. Runs on every request that matches `config.matcher`
+//Protects all /api/* routes except /api/login
+//redirect unauthenticated browser requests to /login
 
-export async function updateSession(request) {
-  let supabaseResponse = NextResponse.next({
-    request,
-  })
+import { NextResponse } from "next/server";
+import { requireAuth } from "@/lib/auth";
 
-  // With Fluid compute, don't put this client in a global environment
-  // variable. Always create a new one on each request.
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
-          supabaseResponse = NextResponse.next({
-            request,
-          })
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options))
-        },
-      },
+export function middleware(request) {
+  const { pathname } = request.nextUrl;
+
+  //Paths that never need a token
+  const isPublic =
+    pathname === "/login" || // login UI page
+    pathname === "/api/login" || // login API
+    pathname.startsWith("/_next") ||
+    pathname.startsWith("/favicon");
+
+  if (isPublic) return NextResponse.next();
+
+  //Protect /api/* routes
+  // API requests get a 401 JSON response so the client can handle it.
+  if (pathname.startsWith("/api/")) {
+    const auth = requireAuth(request);
+    if (!auth.ok) {
+      return NextResponse.json({ error: auth.error }, { status: 401 });
     }
-  )
-
-  // Do not run code between createServerClient and
-  // supabase.auth.getClaims(). A simple mistake could make it very hard to debug
-  // issues with users being randomly logged out.
-
-  // IMPORTANT: If you remove getClaims() and you use server-side rendering
-  // with the Supabase client, your users may be randomly logged out.
-  const { data } = await supabase.auth.getClaims()
-  const user = data?.claims
-
-  if (
-    !user &&
-    !request.nextUrl.pathname.startsWith('/login') &&
-    !request.nextUrl.pathname.startsWith('/auth')
-  ) {
-    // no user, potentially respond by redirecting the user to the login page
-    const url = request.nextUrl.clone()
-    url.pathname = '/auth/login'
-    return NextResponse.redirect(url);
+    return NextResponse.next();
   }
 
-  // IMPORTANT: You *must* return the supabaseResponse object as it is.
-  // If you're creating a new response object with NextResponse.next() make sure to:
-  // 1. Pass the request in it, like so:
-  //    const myNewResponse = NextResponse.next({ request })
-  // 2. Copy over the cookies, like so:
-  //    myNewResponse.cookies.setAll(supabaseResponse.cookies.getAll())
-  // 3. Change the myNewResponse object to fit your needs, but avoid changing
-  //    the cookies!
-  // 4. Finally:
-  //    return myNewResponse
-  // If this is not done, you may be causing the browser and server to go out
-  // of sync and terminate the user's session prematurely!
+  //Protect browser page routes
+  //The login page sets this cookie after a successful login.
+  const cookieToken = request.cookies.get("auth_token")?.value;
+  if (!cookieToken) {
+    const loginUrl = request.nextUrl.clone();
+    loginUrl.pathname = "/login";
+    return NextResponse.redirect(loginUrl);
+  }
 
-  return supabaseResponse
+  //verify the cookie token
+  const auth = requireAuth({
+    headers: { get: () => `Bearer ${cookieToken}` },
+  });
+  if (!auth.ok) {
+    const loginUrl = request.nextUrl.clone();
+    loginUrl.pathname = "/login";
+    return NextResponse.redirect(loginUrl);
+  }
+
+  return NextResponse.next();
 }
+
+export const config = {
+  //middleware on all routes except static files
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+};
