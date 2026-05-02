@@ -1,17 +1,11 @@
-//─────────────────────────────────────────────────────────────────────────────
-//POST /api/login
-//Body:    { username, password }
-//Returns: { token, user: { id, username, role } }
-//─────────────────────────────────────────────────────────────────────────────
-
 import { NextResponse } from "next/server";
-import { VALID_USERS, signToken } from "@/lib/auth";
+import { signToken, verifyCredentials } from "@/lib/auth";
 
 export async function POST(request) {
   try {
     const { username, password } = await request.json();
 
-    //input validation
+    //Input validation
     if (!username || !password) {
       return NextResponse.json(
         { error: "Username and password are required." },
@@ -19,19 +13,13 @@ export async function POST(request) {
       );
     }
 
-    //look up the user
-    //TODO (production): replace with a Supabase DB query + bcrypt.compare()
-    const user = VALID_USERS.find(
-      (u) => u.username === username && u.password === password,
-    );
-
-    if (!user) {
-      //Same message for wrong username OR wrong password to avoid giving hints to attackers.
-      return NextResponse.json(
-        { error: "Invalid username or password." },
-        { status: 401 },
-      );
+    //Check credentials against Supabase users table
+    const auth = await verifyCredentials(username, password);
+    if (!auth.ok) {
+      return NextResponse.json({ error: auth.error }, { status: 401 });
     }
+
+    const { user } = auth;
 
     //Sign the JWT
     const token = signToken({
@@ -40,8 +28,7 @@ export async function POST(request) {
       role: user.role,
     });
 
-    //Set auth_token as an HttpOnly cookie
-    //return the token in the body
+    //Return token in body
     const response = NextResponse.json(
       {
         token,
@@ -50,7 +37,6 @@ export async function POST(request) {
       { status: 200 },
     );
 
-    //Cookie-based protection for page routes (read by middleware.js)
     response.cookies.set("auth_token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
@@ -60,7 +46,8 @@ export async function POST(request) {
     });
 
     return response;
-  } catch {
+  } catch (err) {
+    console.error("[POST /api/login]", err);
     return NextResponse.json(
       { error: "Internal server error." },
       { status: 500 },

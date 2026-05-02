@@ -10,15 +10,16 @@ export function middleware(request) {
 
   //Paths that never need a token
   const isPublic =
-    pathname === "/login" || // login UI page
-    pathname === "/api/login" || // login API
+    pathname === "/login" || //login UI page
+    pathname === "/register" ||
+    pathname === "/api/login" || //login API
+    pathname === "/api/register" ||
     pathname.startsWith("/_next") ||
     pathname.startsWith("/favicon");
 
   if (isPublic) return NextResponse.next();
 
   //Protect /api/* routes
-  // API requests get a 401 JSON response so the client can handle it.
   if (pathname.startsWith("/api/")) {
     const auth = requireAuth(request);
     if (!auth.ok) {
@@ -28,7 +29,6 @@ export function middleware(request) {
   }
 
   //Protect browser page routes
-  //The login page sets this cookie after a successful login.
   const cookieToken = request.cookies.get("auth_token")?.value;
   if (!cookieToken) {
     const loginUrl = request.nextUrl.clone();

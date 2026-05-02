@@ -1,12 +1,6 @@
-//A thin wrapper around fetch() that automatically:
-//   1. Reads the JWT from localStorage
-//   2. Adds the Authorization: Bearer <token> header
-//   3. Redirects to /login on a 401 response
-//Usage (anywhere in your client components):
-//   import { fetchWithAuth } from "@/lib/fetchWithAuth";
-//   const res = await fetchWithAuth("/api/inventory");
-//   const { data } = await res.json();
-
+//Read the JWT from localStorage
+//Adds the Authorization: Bearer <token> header
+//Redirects to /login on a 401 response
 export async function fetchWithAuth(url, options = {}) {
   //Read token from localStorage (client-side only)
   const token =

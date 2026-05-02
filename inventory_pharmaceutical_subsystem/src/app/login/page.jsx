@@ -1,9 +1,9 @@
 "use client";
-// src/app/login/page.jsx
-// Login page - /login 
+//Added "Register as Pharmacist" link at the bottom
 
 import { useState }  from "react";
 import { useRouter } from "next/navigation";
+import Link          from "next/link";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -35,11 +35,9 @@ export default function LoginPage() {
         return;
       }
 
-      //Store token in localStorage (used by client-side fetch calls)
       localStorage.setItem("auth_token", data.token);
       localStorage.setItem("auth_user",  JSON.stringify(data.user));
 
-      // Redirect to inventory
       router.push("/pages/inventory");
 
     } catch {
@@ -112,10 +110,18 @@ export default function LoginPage() {
           </button>
         </form>
 
-        {/* Remove in production */}
-        <p className="text-center text-xs text-gray-300 mt-6">
-          Demo · <span className="font-mono">admin / password123</span>
-        </p>
+        {/* Register link — NEW */}
+        <div className="mt-6 pt-5 border-t border-gray-100 text-center">
+          <p className="text-xs text-gray-400">
+            Are you a pharmacist?{" "}
+            <Link
+              href="/register"
+              className="text-gray-700 font-semibold hover:underline"
+            >
+              Register here
+            </Link>
+          </p>
+        </div>
 
       </div>
     </div>
