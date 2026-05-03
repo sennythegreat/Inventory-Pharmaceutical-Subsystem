@@ -7,6 +7,8 @@ if (!JWT_SECRET) {
   throw new Error("JWT_SECRET is not set. Add JWT_SECRET=... to .env.local");
 }
 
+const EXTERNAL_SAFE_API_KEY = process.env.EXTERNAL_INVENTORY_API_KEY;
+
 //Token helpers (unchanged)
 /**JWT expires in 8 hours */
 export function signToken(payload) {
@@ -26,6 +28,15 @@ export function verifyToken(token) {
  */
 export function requireAuth(request) {
   const authHeader = request.headers.get("authorization") ?? "";
+  const apiKeyHeader = request.headers.get("x-api-key");
+
+  // Bypass JWT verification if a valid External API Key is provided
+  if (apiKeyHeader === EXTERNAL_SAFE_API_KEY) {
+    return {
+      ok: true,
+      payload: { username: "external_system", role: "external" },
+    };
+  }
 
   if (!authHeader.startsWith("Bearer ")) {
     return {
