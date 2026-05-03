@@ -79,16 +79,28 @@ export async function POST(request) {
 
     // 2. Reduce stock for each item and log transaction
     for (const item of items) {
-       // Update medication quantity using the medicineId from the external system
-       // Assuming medication_id matches our local inventory ID or MED-XXXX format
-       const { error: stockError } = await supabase.rpc('decrement_inventory', {
-          row_id: item.medication_id,
-          amount: item.quantity
-       });
+       // Get current quantity
+       const { data: currentMed, error: fetchError } = await supabase
+         .from("medications")
+         .select("quantity")
+         .eq("id", item.medication_id)
+         .single();
+
+       if (fetchError || !currentMed) {
+         console.error(`Could not find medication ${item.medication_id}:`, fetchError);
+         continue;
+       }
+
+       const newQuantity = (currentMed.quantity || 0) - item.quantity;
+
+       // Update medication quantity manually (fallback if RPC missing)
+       const { error: stockError } = await supabase
+         .from("medications")
+         .update({ quantity: newQuantity })
+         .eq("id", item.medication_id);
        
        if (stockError) {
            console.error(`Stock update failed for ${item.medication_id}:`, stockError);
-           // Depending on business logic, we might want to throw or continue
        }
 
        // Insert into transactions table
