@@ -21,7 +21,7 @@ export function verifyToken(token) {
 }
 
 /**
- * Extract + verify the Bearer token from a Next.js App Router Request object.
+ * Extract + verify the Bearer token or x-api-key from a Next.js App Router Request object.
  * Returns:
  *   { ok: true,  payload: { sub, username, role, iat, exp } }
  *   { ok: false, error: string, status: 401 }
@@ -30,7 +30,7 @@ export function requireAuth(request) {
   const authHeader = request.headers.get("authorization") ?? "";
   const apiKeyHeader = request.headers.get("x-api-key");
 
-  // Bypass JWT verification if a valid External API Key is provided
+  // 1. Check for API Key first
   if (apiKeyHeader === EXTERNAL_SAFE_API_KEY) {
     return {
       ok: true,
@@ -38,33 +38,32 @@ export function requireAuth(request) {
     };
   }
 
-  if (!authHeader.startsWith("Bearer ")) {
-    return {
-      ok: false,
-      error:
-        "Missing or malformed Authorization header. Expected: Bearer <token>",
-      status: 401,
-    };
+  // 2. Fallback to Bearer Token
+  if (authHeader.startsWith("Bearer ")) {
+    const token = authHeader.slice(7);
+    try {
+      const payload = verifyToken(token);
+      return { ok: true, payload };
+    } catch (err) {
+      return {
+        ok: false,
+        error:
+          err.name === "TokenExpiredError"
+            ? "Token has expired — please log in again"
+            : "Invalid token",
+        status: 401,
+      };
+    }
   }
 
-  const token = authHeader.slice(7);
-
-  try {
-    const payload = verifyToken(token);
-    return { ok: true, payload };
-  } catch (err) {
-    return {
-      ok: false,
-      error:
-        err.name === "TokenExpiredError"
-          ? "Token has expired — please log in again"
-          : "Invalid token",
-      status: 401,
-    };
-  }
+  // 3. Unauthorized
+  return {
+    ok: false,
+    error: "Authentication required. Provide a valid 'x-api-key' or 'Authorization: Bearer <token>'",
+    status: 401,
+  };
 }
 
-//Supabase credential verification
 /**
  * Look up a user by username in Supabase and verify their password.
  *
