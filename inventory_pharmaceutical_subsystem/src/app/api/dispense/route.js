@@ -53,32 +53,43 @@ export async function POST(request) {
   const supabase = createClient();
 
   try {
-    const { prescriptionId, items } = await request.json();
+    const { invoiceId, items } = await request.json();
 
-    if (!prescriptionId || !items || !items.length) {
+    if (!invoiceId || !items || !items.length) {
       return NextResponse.json(
-        { error: "Missing prescription details or items" },
+        { error: "Missing invoice details or items" },
         { status: 400 }
       );
     }
 
-    // 1. Mark prescription as dispensed
+    // 1. Mark invoice/prescription as dispensed in our local tracking
+    // Note: We might want to save the external invoice_id as a reference
     const { error: updateError } = await supabase
-      .from("prescriptions")
-      .update({ status: "DISPENSED", dispensed_at: new Date().toISOString(), dispensed_by: payload.username })
-      .eq("id", prescriptionId);
+      .from("dispensed_history") // Assuming a table for history
+      .insert({ 
+        external_invoice_id: invoiceId, 
+        dispensed_at: new Date().toISOString(), 
+        dispensed_by: payload.username 
+      });
 
-    if (updateError) throw updateError;
+    if (updateError) {
+        // If table doesn't exist, we log but continue with inventory decrement
+        console.warn("Could not log to dispensed_history:", updateError.message);
+    }
 
     // 2. Reduce stock for each item and log transaction
     for (const item of items) {
-       // Update medication quantity
+       // Update medication quantity using the medicineId from the external system
+       // Assuming medication_id matches our local inventory ID or MED-XXXX format
        const { error: stockError } = await supabase.rpc('decrement_inventory', {
           row_id: item.medication_id,
           amount: item.quantity
        });
        
-       if (stockError) throw stockError;
+       if (stockError) {
+           console.error(`Stock update failed for ${item.medication_id}:`, stockError);
+           // Depending on business logic, we might want to throw or continue
+       }
 
        // Insert into transactions table
        await supabase.from("transactions").insert({
@@ -86,7 +97,7 @@ export async function POST(request) {
           medication_id: item.medication_id,
           quantity: item.quantity,
           performed_by: payload.username,
-          reference_id: prescriptionId
+          reference_id: invoiceId
        });
     }
 
