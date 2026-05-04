@@ -33,10 +33,14 @@ export default function RestockMedicine() {
     useEffect(() => {
         const fetchMeds = async () => {
             try {
-                const data = await inventoryService.getAllInventory();
-                setMedications(data);
+                const response = await inventoryService.getAllInventory();
+                // Check if response is the raw JSON which has { data, meta }
+                const data = response.data || response;
+                setMedications(Array.isArray(data) ? data : []);
             } catch (err) {
+                console.error("Fetch meds error:", err);
                 setError("Failed to load medications");
+                setMedications([]);
             } finally {
                 setLoading(false);
             }
@@ -51,7 +55,7 @@ export default function RestockMedicine() {
 
     const handleSelectChange = (val) => {
         setSelectedMedId(val);
-        const med = medications.find(m => m.id === val);
+        const med = (medications || []).find(m => m.id === val);
         if (med) {
             setFormData(prev => ({ 
                 ...prev, 
@@ -84,7 +88,7 @@ export default function RestockMedicine() {
         }
     };
 
-    const selectedMed = medications.find(m => m.id === selectedMedId);
+    const selectedMed = Array.isArray(medications) ? medications.find(m => m.id === selectedMedId) : null;
 
     return (
         <div className="mx-auto p-6">
