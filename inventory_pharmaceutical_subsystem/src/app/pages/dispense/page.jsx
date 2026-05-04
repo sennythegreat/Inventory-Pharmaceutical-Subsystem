@@ -82,6 +82,9 @@ export default function DispensePage() {
 
   const filteredInvoices = invoices
     .filter(inv => {
+      // Only show invoices that are NOT released
+      if (inv.is_released === true) return false;
+
       const matchesSearch = 
         inv.invoice_id?.toString().toLowerCase().includes(search.toLowerCase()) ||
         inv.patient_name?.toLowerCase().includes(search.toLowerCase());

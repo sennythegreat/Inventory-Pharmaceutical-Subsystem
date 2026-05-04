@@ -16,9 +16,17 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export default function TransactionsPage() {
   const [transactions, setTransactions] = useState([]);
+  const [selectedTransaction, setSelectedTransaction] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
 
@@ -36,6 +44,11 @@ export default function TransactionsPage() {
     }
     loadTransactions();
   }, []);
+
+  const handleOpenDetail = (tx) => {
+    setSelectedTransaction(tx);
+    setIsModalOpen(true);
+  };
 
   const filteredTransactions = transactions.filter(tx => 
     tx.reference_id?.toLowerCase().includes(search.toLowerCase()) ||
@@ -84,7 +97,11 @@ export default function TransactionsPage() {
         ) : (
           <div className="flex flex-col gap-3">
             {filteredTransactions.map((tx) => (
-              <Card key={tx._id || tx.id} className="group hover:border-primary/30 transition-all">
+              <Card 
+                key={tx._id || tx.id} 
+                className="group hover:border-primary/30 transition-all cursor-pointer"
+                onClick={() => handleOpenDetail(tx)}
+              >
                 <CardContent className="p-4 flex items-center justify-between">
                   <div className="flex items-center gap-6 flex-1">
                     {/* Icon/Type */}
@@ -143,6 +160,66 @@ export default function TransactionsPage() {
           </div>
         )}
       </div>
+
+      {/* Detail Modal */}
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <History className="h-5 w-5 text-primary" />
+              Transaction Details
+            </DialogTitle>
+          </DialogHeader>
+          
+          {selectedTransaction && (
+            <div className="space-y-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Type</p>
+                  <Badge className={`${
+                    selectedTransaction.type === 'DISPENSE' ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700'
+                  }`}>
+                    {selectedTransaction.type}
+                  </Badge>
+                </div>
+                <div className="space-y-1 text-right">
+                  <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Reference ID</p>
+                  <p className="text-sm font-mono font-medium">{selectedTransaction.reference_id || 'N/A'}</p>
+                </div>
+              </div>
+
+              <div className="bg-slate-50 p-4 rounded-lg border border-slate-100 space-y-3">
+                <div className="space-y-1">
+                  <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Medication</p>
+                  <p className="text-base font-bold text-slate-900">{selectedTransaction.medications?.name || selectedTransaction.medication_id}</p>
+                  <p className="text-xs text-slate-500 uppercase font-medium">{selectedTransaction.medications?.dosage}</p>
+                </div>
+                <div className="flex justify-between items-end border-t border-slate-200 pt-3">
+                  <div className="space-y-1">
+                    <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Quantity</p>
+                    <p className="text-lg font-bold text-primary">{selectedTransaction.quantity}</p>
+                  </div>
+                  <div className="text-right space-y-1">
+                    <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Unit Price</p>
+                    <p className="text-sm font-medium">₱{selectedTransaction.price_at_time || "0.00"}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="space-y-1">
+                  <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Performed By</p>
+                  <p className="font-medium capitalize">{selectedTransaction.performed_by}</p>
+                </div>
+                <div className="space-y-1 text-right">
+                  <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Timestamp</p>
+                  <p className="font-medium">{new Date(selectedTransaction.created_at).toLocaleString()}</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

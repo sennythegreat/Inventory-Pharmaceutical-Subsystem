@@ -77,6 +77,21 @@ export async function POST(request) {
         console.warn("Could not log to dispensed_history:", updateError.message);
     }
 
+    // Update external invoice release status
+    try {
+      const apiKey = process.env.NEXT_PUBLIC_EXTERNAL_PMS_API_KEY;
+      await fetch(`https://pms-backend-kohl.vercel.app/api/v1/external/invoices/${invoiceId}/release`, {
+        method: 'PATCH',
+        headers: {
+          'x-api-key': apiKey,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ is_released: true })
+      });
+    } catch (err) {
+      console.error("Failed to update external invoice status:", err);
+    }
+
     // 2. Reduce stock for each item and log transaction
     for (const item of items) {
        // Get current quantity
