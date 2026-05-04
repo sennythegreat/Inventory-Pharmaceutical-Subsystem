@@ -60,7 +60,7 @@ export async function POST(request) {
       );
     }
 
-    const randomId = `MED-${Math.floor(Math.random() * 900000) + 100000}`;
+    const randomId = `MED${Math.floor(Math.random() * 900000) + 100000}`;
 
     const { data, error } = await supabase
       .from("medications")
