@@ -37,7 +37,7 @@ export async function PATCH(request, context) {
     };
 
     if (price) updatePayload.price = Number(price);
-    if (expiry) updatePayload.expiry_date = expiry;
+    if (expiry) updatePayload.expiry = expiry;
 
     //3. Update stock
     const { data: updatedData, error: updateError } = await supabase
