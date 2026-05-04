@@ -222,7 +222,7 @@ export default function DispensePage() {
 
                   <div className="flex flex-col items-end min-w-[100px]">
                     <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Total</p>
-                    <p className="text-lg font-bold text-slate-900">${invoice.total_amount}</p>
+                    <p className="text-lg font-bold text-slate-900">₱{invoice.total_amount}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -254,18 +254,20 @@ export default function DispensePage() {
                   >
                     Close
                   </Button>
-                  <Button 
-                    onClick={handleDispense} 
-                    disabled={isDispensing}
-                    className="gap-2 px-8"
-                  >
-                    {isDispensing ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <CheckCircle2 className="h-4 w-4" />
-                    )}
-                    Confirm Release
-                  </Button>
+                  {selectedInvoice?.status?.toLowerCase() === 'paid' && (
+                    <Button 
+                      onClick={handleDispense} 
+                      disabled={isDispensing}
+                      className="gap-2 px-8"
+                    >
+                      {isDispensing ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <CheckCircle2 className="h-4 w-4" />
+                      )}
+                      Confirm Release
+                    </Button>
+                  )}
                 </div>
               </div>
             )}

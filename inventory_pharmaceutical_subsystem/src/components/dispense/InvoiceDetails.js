@@ -85,8 +85,8 @@ export default function InvoiceDetails({ invoice }) {
                       {item.prescribedDosage && <p className="text-xs text-muted-foreground">{item.prescribedDosage}</p>}
                     </td>
                     <td className="p-3 text-center">{item.prescribedQuantity}</td>
-                    <td className="p-3 text-right">${item.unitPrice?.toFixed(2)}</td>
-                    <td className="p-3 text-right font-medium">${item.totalPrice?.toFixed(2)}</td>
+                    <td className="p-3 text-right">₱{item.unitPrice?.toFixed(2)}</td>
+                    <td className="p-3 text-right font-medium">₱{item.totalPrice?.toFixed(2)}</td>
                   </tr>
                 )) : (
                   <tr>
@@ -98,7 +98,7 @@ export default function InvoiceDetails({ invoice }) {
                 <tr>
                   <td colSpan="3" className="p-3 text-right">Total Amount</td>
                   <td className="p-3 text-right text-lg text-primary">
-                    ${(invoice.total_amount || 0).toFixed(2)}
+                    ₱{(invoice.total_amount || 0).toFixed(2)}
                   </td>
                 </tr>
               </tfoot>

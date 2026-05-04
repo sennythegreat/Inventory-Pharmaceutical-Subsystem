@@ -68,7 +68,7 @@ export default function InvoiceSidebar({ onSelectInvoice, selectedId }) {
                       
                     </div>
                     <p className="text-xs font-semibold">
-                      ${invoice.total_amount || 0}
+                      ₱{invoice.total_amount || 0}
                     </p>
                   </div>
                   <p className="text-[10px] text-muted-foreground mt-1">
