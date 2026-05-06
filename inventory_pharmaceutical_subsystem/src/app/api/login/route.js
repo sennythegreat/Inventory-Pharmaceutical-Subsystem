@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { signToken, verifyCredentials } from "@/lib/auth";
+import { signToken, verifyCredentials, externalSubsystemLogin } from "@/lib/auth";
 
 export async function POST(request) {
   try {
@@ -13,8 +13,15 @@ export async function POST(request) {
       );
     }
 
-    //Check credentials against Supabase users table
-    const auth = await verifyCredentials(username, password);
+    // Try external subsystem login first (as requested)
+    let auth = await externalSubsystemLogin(username, password, "Inventory");
+
+    // If external login fails, try local Supabase login as fallback
+    if (!auth.ok) {
+      console.log("External login failed, trying local credentials...");
+      auth = await verifyCredentials(username, password);
+    }
+
     if (!auth.ok) {
       return NextResponse.json({ error: auth.error }, { status: 401 });
     }

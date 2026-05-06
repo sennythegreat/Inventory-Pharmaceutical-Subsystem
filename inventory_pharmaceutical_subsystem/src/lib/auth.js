@@ -100,3 +100,54 @@ export async function verifyCredentials(username, password) {
     },
   };
 }
+
+/**
+ * Log in via the external subsystem API.
+ * 
+ * @param {string} username 
+ * @param {string} password 
+ * @param {string} subsystem 
+ */
+export async function externalSubsystemLogin(username, password, subsystem = "Inventory") {
+  const apiUrl = process.env.AUTH_EXTERNAL_API_URL;
+  const subsystemKey = process.env.AUTHENTICATION_API_KEY;
+
+  if (!apiUrl || !subsystemKey) {
+    return { ok: false, error: "External authentication is not configured." };
+  }
+
+  try {
+    const response = await fetch(apiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Subsystem-Key": subsystemKey,
+      },
+      body: JSON.stringify({
+        username,
+        password,
+        subsystem,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      return { ok: false, error: data.message || data.error || "External login failed." };
+    }
+
+    // Return the user data from the external subsystem
+    return {
+      ok: true,
+      user: {
+        id: data.user?.id || data.id,
+        username: data.user?.username || username,
+        role: data.user?.role || "admin",
+        token: data.token, // If the external API returns its own token
+      },
+    };
+  } catch (error) {
+    console.error("External login error:", error);
+    return { ok: false, error: "Authentication service is currently unavailable." };
+  }
+}
