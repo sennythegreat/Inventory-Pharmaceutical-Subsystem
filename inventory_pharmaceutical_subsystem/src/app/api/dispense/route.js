@@ -77,7 +77,13 @@ export async function PATCH(request) {
     // Update external invoice release status
     try {
       const apiKey = process.env.NEXT_PUBLIC_EXTERNAL_PMS_API_KEY;
-      await fetch(`https://pms-backend-kohl.vercel.app/api/v1/external/invoices/${invoiceId}`, {
+      // Use the human-readable invoice_id (e.g., INV-...) as requested
+      const updateId = invoiceId;
+      const externalUrl = `https://pms-backend-kohl.vercel.app/api/v1/external/invoices/${updateId}`;
+      
+      console.log(`Updating external invoice ${updateId} at ${externalUrl}`);
+      
+      const externalResponse = await fetch(externalUrl, {
         method: 'PATCH',
         headers: {
           'x-api-key': apiKey,
@@ -85,6 +91,13 @@ export async function PATCH(request) {
         },
         body: JSON.stringify({ is_released: true })
       });
+
+      if (!externalResponse.ok) {
+        const errorText = await externalResponse.text();
+        console.error(`External API returned error (${externalResponse.status}): ${errorText}`);
+      } else {
+        console.log(`Successfully updated external invoice ${invoiceId}`);
+      }
     } catch (err) {
       console.error("Failed to update external invoice status:", err);
     }

@@ -62,7 +62,8 @@ export default function DispensePage() {
         items: selectedInvoice.items.map(item => ({
           medication_id: item.medicineId,
           name: item.medicineName,
-          quantity: item.prescribedQuantity
+          quantity: item.prescribedQuantity,
+          invoice_internal_id: selectedInvoice._id // Pass the internal MongoDB ID
         }))
       };
 
@@ -82,7 +83,7 @@ export default function DispensePage() {
 
   const filteredInvoices = invoices
     .filter(inv => {
-      // Only show invoices that are NOT released
+      // Show ONLY invoices where is_released is FALSE
       if (inv.is_released === true) return false;
 
       const matchesSearch = 

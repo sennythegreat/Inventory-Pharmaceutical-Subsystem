@@ -37,7 +37,7 @@ export default function TransactionsPage() {
         const response = await fetchWithAuth("/api/dispense/external");
         const result = await response.json();
         
-        // Filter to show only released prescriptions
+        // Filter to show ONLY released prescriptions (is_released: true)
         const releasedInvoices = (result.data?.invoices || []).filter(inv => inv.is_released === true);
         
         setTransactions(releasedInvoices);
