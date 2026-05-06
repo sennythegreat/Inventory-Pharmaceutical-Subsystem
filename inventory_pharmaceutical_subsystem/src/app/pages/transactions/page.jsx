@@ -33,11 +33,16 @@ export default function TransactionsPage() {
   useEffect(() => {
     async function loadTransactions() {
       try {
-        const response = await fetchWithAuth("/api/transactions");
+        // Fetch external invoices instead of internal transaction logs
+        const response = await fetchWithAuth("/api/dispense/external");
         const result = await response.json();
-        setTransactions(result.data || []);
+        
+        // Filter to show only released prescriptions
+        const releasedInvoices = (result.data?.invoices || []).filter(inv => inv.is_released === true);
+        
+        setTransactions(releasedInvoices);
       } catch (err) {
-        console.error("Failed to load transactions:", err);
+        console.error("Failed to load released prescriptions:", err);
       } finally {
         setLoading(false);
       }
@@ -51,10 +56,9 @@ export default function TransactionsPage() {
   };
 
   const filteredTransactions = transactions.filter(tx => 
-    tx.reference_id?.toLowerCase().includes(search.toLowerCase()) ||
-    tx.medication_id?.toLowerCase().includes(search.toLowerCase()) ||
-    tx.performed_by?.toLowerCase().includes(search.toLowerCase()) ||
-    tx.medications?.name?.toLowerCase().includes(search.toLowerCase())
+    tx.invoice_id?.toString().toLowerCase().includes(search.toLowerCase()) ||
+    tx.patient_name?.toLowerCase().includes(search.toLowerCase()) ||
+    tx.items?.some(item => item.medicineName?.toLowerCase().includes(search.toLowerCase()))
   );
 
   return (
@@ -64,9 +68,9 @@ export default function TransactionsPage() {
         <div>
           <h1 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
             <History className="h-6 w-6 text-primary" />
-            Transaction Logs
+            Dispensed Prescription Logs
           </h1>
-          <p className="text-muted-foreground">Audit trail for all inventory movements and dispensing actions.</p>
+          <p className="text-muted-foreground">Historical records of prescriptions released to patients.</p>
         </div>
       </div>
 
@@ -74,7 +78,7 @@ export default function TransactionsPage() {
       <div className="relative shrink-0">
         <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
         <Input
-          placeholder="Search by ID, medication, or user..."
+          placeholder="Search by Invoice ID or Patient Name..."
           className="pl-10 bg-white"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -86,61 +90,51 @@ export default function TransactionsPage() {
         {loading ? (
           <div className="flex flex-col items-center justify-center p-20">
             <Loader2 className="h-10 w-10 animate-spin text-primary opacity-20" />
-            <p className="mt-4 text-muted-foreground">Fetching audit logs...</p>
+            <p className="mt-4 text-muted-foreground">Fetching release history...</p>
           </div>
         ) : filteredTransactions.length === 0 ? (
           <div className="bg-white border border-dashed rounded-2xl p-20 flex flex-col items-center flex-1">
              <History className="h-12 w-12 text-slate-200 mb-4" />
-             <h3 className="text-lg font-medium text-slate-900">No records found</h3>
-             <p className="text-muted-foreground mt-1">Wait for transactions to be processed or adjust your search.</p>
+             <h3 className="text-lg font-medium text-slate-900">No released records</h3>
+             <p className="text-muted-foreground mt-1">Dispensed prescriptions with "Released" status will appear here.</p>
           </div>
         ) : (
           <div className="flex flex-col gap-3">
             {filteredTransactions.map((tx) => (
               <Card 
-                key={tx._id || tx.id} 
+                key={tx.invoice_id} 
                 className="group hover:border-primary/30 transition-all cursor-pointer"
                 onClick={() => handleOpenDetail(tx)}
               >
                 <CardContent className="p-4 flex items-center justify-between">
                   <div className="flex items-center gap-6 flex-1">
                     {/* Icon/Type */}
-                    <div className={`p-2 rounded-full ${
-                      tx.type === 'DISPENSE' ? 'bg-orange-50 text-orange-600' : 'bg-blue-50 text-blue-600'
-                    }`}>
-                      {tx.type === 'DISPENSE' ? <ArrowDownRight className="h-5 w-5" /> : <ArrowUpRight className="h-5 w-5" />}
+                    <div className="p-2 rounded-full bg-emerald-50 text-emerald-600">
+                      <CheckCircle2 className="h-5 w-5" />
                     </div>
 
-                    {/* Medication Info */}
+                    {/* Patient Info */}
                     <div className="flex flex-col min-w-[200px]">
                       <h4 className="font-bold text-slate-900 leading-tight">
-                        {tx.medications?.name || tx.medication_id}
+                        {tx.patient_name}
                       </h4>
                       <p className="text-xs text-muted-foreground uppercase flex items-center gap-1 mt-1">
-                        <Package className="h-3 w-3" />
-                        Qty: {tx.quantity} {tx.medications?.dosage}
-                      </p>
-                    </div>
-
-                    {/* Reference and Identity */}
-                    <div className="hidden md:flex flex-col min-w-[150px]">
-                      <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Reference</p>
-                      <p className="text-sm font-medium text-slate-700 truncate max-w-[120px]">
-                        {tx.reference_id || 'N/A'}
-                      </p>
-                    </div>
-
-                    <div className="hidden lg:flex flex-col min-w-[150px]">
-                      <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Performed By</p>
-                      <p className="text-sm font-medium text-slate-700 flex items-center gap-1 capitalize">
                         <User className="h-3 w-3" />
-                        {tx.performed_by}
+                        ID: {tx.invoice_id}
+                      </p>
+                    </div>
+
+                    {/* Items Summary */}
+                    <div className="hidden md:flex flex-col min-w-[150px]">
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Items</p>
+                      <p className="text-sm font-medium text-slate-700 truncate max-w-[120px]">
+                        {tx.items?.length || 0} Medications
                       </p>
                     </div>
 
                     {/* Status Badge */}
-                    <Badge variant="secondary" className="bg-slate-100 text-slate-600 capitalize">
-                      {tx.type?.toLowerCase()}
+                    <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 capitalize">
+                      Released
                     </Badge>
                   </div>
 
@@ -148,10 +142,10 @@ export default function TransactionsPage() {
                   <div className="flex flex-col items-end min-w-[120px]">
                     <div className="flex items-center gap-1 text-slate-900 font-bold">
                        <Calendar className="h-3 w-3" />
-                       {new Date(tx.created_at).toLocaleDateString()}
+                       {new Date(tx.released_at || tx.invoice_date).toLocaleDateString()}
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      {new Date(tx.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    <p className="text-xs text-muted-foreground font-mono">
+                      #{tx.invoice_id}
                     </p>
                   </div>
                 </CardContent>
@@ -167,7 +161,7 @@ export default function TransactionsPage() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <History className="h-5 w-5 text-primary" />
-              Transaction Details
+              Prescription Details
             </DialogTitle>
           </DialogHeader>
           
@@ -175,45 +169,44 @@ export default function TransactionsPage() {
             <div className="space-y-4 py-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Type</p>
-                  <Badge className={`${
-                    selectedTransaction.type === 'DISPENSE' ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700'
-                  }`}>
-                    {selectedTransaction.type}
+                  <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Status</p>
+                  <Badge className="bg-emerald-100 text-emerald-700">
+                    RELEASED
                   </Badge>
                 </div>
                 <div className="space-y-1 text-right">
-                  <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Reference ID</p>
-                  <p className="text-sm font-mono font-medium">{selectedTransaction.reference_id || 'N/A'}</p>
+                  <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Invoice ID</p>
+                  <p className="text-sm font-mono font-medium">{selectedTransaction.invoice_id}</p>
                 </div>
               </div>
 
-              <div className="bg-slate-50 p-4 rounded-lg border border-slate-100 space-y-3">
+              <div className="bg-slate-50 p-4 rounded-lg border border-slate-100 space-y-4">
                 <div className="space-y-1">
-                  <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Medication</p>
-                  <p className="text-base font-bold text-slate-900">{selectedTransaction.medications?.name || selectedTransaction.medication_id}</p>
-                  <p className="text-xs text-slate-500 uppercase font-medium">{selectedTransaction.medications?.dosage}</p>
+                  <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Patient Name</p>
+                  <p className="text-base font-bold text-slate-900">{selectedTransaction.patient_name}</p>
                 </div>
-                <div className="flex justify-between items-end border-t border-slate-200 pt-3">
-                  <div className="space-y-1">
-                    <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Quantity</p>
-                    <p className="text-lg font-bold text-primary">{selectedTransaction.quantity}</p>
-                  </div>
-                  <div className="text-right space-y-1">
-                    <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Unit Price</p>
-                    <p className="text-sm font-medium">₱{selectedTransaction.price_at_time || "0.00"}</p>
+                
+                <div className="space-y-2 border-t border-slate-200 pt-3">
+                  <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Medications Dispensed</p>
+                  <div className="space-y-2">
+                    {selectedTransaction.items?.map((item, idx) => (
+                      <div key={idx} className="flex justify-between items-center text-sm">
+                        <span className="font-medium text-slate-700">{item.medicineName}</span>
+                        <span className="text-slate-500">Qty: {item.prescribedQuantity}</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div className="space-y-1">
-                  <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Performed By</p>
-                  <p className="font-medium capitalize">{selectedTransaction.performed_by}</p>
+                  <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Doctor</p>
+                  <p className="font-medium capitalize">{selectedTransaction.doctor_name || "N/A"}</p>
                 </div>
                 <div className="space-y-1 text-right">
-                  <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Timestamp</p>
-                  <p className="font-medium">{new Date(selectedTransaction.created_at).toLocaleString()}</p>
+                  <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Dispensed Date</p>
+                  <p className="font-medium">{new Date(selectedTransaction.released_at || selectedTransaction.invoice_date).toLocaleDateString()}</p>
                 </div>
               </div>
             </div>

@@ -41,11 +41,8 @@ export async function GET(request) {
   return NextResponse.json(prescription, { status: 200 });
 }
 
-/**
- * POST /api/dispense
- * Process the dispensing logic
- */
-export async function POST(request) {
+
+export async function PATCH(request) {
   const guard = withAuth(request);
   if (guard) return guard;
 
@@ -80,7 +77,7 @@ export async function POST(request) {
     // Update external invoice release status
     try {
       const apiKey = process.env.NEXT_PUBLIC_EXTERNAL_PMS_API_KEY;
-      await fetch(`https://pms-backend-kohl.vercel.app/api/v1/external/invoices/${invoiceId}/release`, {
+      await fetch(`https://pms-backend-kohl.vercel.app/api/v1/external/invoices/${invoiceId}`, {
         method: 'PATCH',
         headers: {
           'x-api-key': apiKey,

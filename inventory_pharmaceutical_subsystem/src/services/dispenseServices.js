@@ -18,7 +18,7 @@ export const dispenseService = {
    */
   async dispenseMedication(dispenseData) {
     const response = await fetchWithAuth("/api/dispense", {
-      method: "POST",
+      method: "PATCH",
       body: JSON.stringify(dispenseData),
     });
 
