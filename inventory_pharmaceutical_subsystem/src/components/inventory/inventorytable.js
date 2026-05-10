@@ -3,6 +3,7 @@
 import { useState } from "react";
 import StatusBadge from "./StatusBadge";
 import { inventoryService } from "../../services/inventoryServices";
+import { Edit2, Trash2, Check, X } from "lucide-react";
 
 export default function InventoryTable({ data, onRefresh }) {
   const [editingItem, setEditingItem] = useState(null);
@@ -136,21 +137,44 @@ export default function InventoryTable({ data, onRefresh }) {
                   <StatusBadge status={item.status} />
                 </td>
                 <td className="px-6 py-4">
-                  <div className="flex gap-2">
+                  <div className="flex gap-3">
                     {editingItem === item.id ? (
                       <>
-                        <button onClick={() => handleSave(item.id)} className="text-green-600 hover:text-green-800 text-xs font-bold uppercase">Save</button>
-                        <button onClick={() => setEditingItem(null)} className="text-gray-400 hover:text-gray-600 text-xs font-bold uppercase">Cancel</button>
+                        <button 
+                          onClick={() => handleSave(item.id)} 
+                          className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                          title="Save Changes"
+                        >
+                          <Check size={18} />
+                        </button>
+                        <button 
+                          onClick={() => setEditingItem(null)} 
+                          className="p-1.5 text-gray-400 hover:bg-gray-100 rounded-lg transition-colors"
+                          title="Cancel"
+                        >
+                          <X size={18} />
+                        </button>
                       </>
                     ) : (
                       <>
-                        <button onClick={() => handleEdit(item)} className="text-blue-600 hover:text-blue-800 text-xs font-bold uppercase">Edit</button>
+                        <button 
+                          onClick={() => handleEdit(item)} 
+                          className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          title="Edit Medication"
+                        >
+                          <Edit2 size={18} />
+                        </button>
                         <button 
                           disabled={isDeleting === item.id}
                           onClick={() => handleDelete(item.id)} 
-                          className="text-red-600 hover:text-red-800 text-xs font-bold uppercase"
+                          className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                          title="Delete Medication"
                         >
-                          {isDeleting === item.id ? "..." : "Delete"}
+                          {isDeleting === item.id ? (
+                            <span className="w-[18px] h-[18px] border-2 border-red-600 border-t-transparent rounded-full animate-spin block"></span>
+                          ) : (
+                            <Trash2 size={18} />
+                          )}
                         </button>
                       </>
                     )}
