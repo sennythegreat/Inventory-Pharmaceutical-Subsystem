@@ -5,6 +5,11 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { UserCircle, LogOut } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 export default function Header() {
   const router = useRouter();
@@ -40,29 +45,36 @@ export default function Header() {
         </span>
       </div>
 
-      {/* Right: user info + logout */}
-      <div className="flex items-center gap-3">
-        {user && (
-          <div className="text-right">
-            <p className="text-sm font-semibold leading-tight text-gray-900">
-              {user.username}
-            </p>
-            <p className="text-xs text-gray-400 leading-tight">{user.role}</p>
+      {/* Right: user info with Popover Logout */}
+      <Popover>
+        <PopoverTrigger asChild>
+          <div className="flex items-center gap-3 cursor-pointer hover:bg-gray-50 p-2 rounded-lg transition-colors">
+            {user && (
+              <div className="text-right">
+                <p className="text-sm font-semibold leading-tight text-gray-900 capitalize">
+                  {user.username}
+                </p>
+                <p className="text-xs text-gray-400 leading-tight">{user.role}</p>
+              </div>
+            )}
+            <UserCircle className="w-8 h-8 text-gray-400" />
           </div>
-        )}
-
-        <UserCircle className="w-8 h-8 text-gray-400" />
-
-        {/* Logout button */}
-        <button
-          onClick={handleLogout}
-          title="Log out"
-          className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-red-500 transition-colors ml-2"
-        >
-          <LogOut className="w-4 h-4" />
-          <span className="hidden sm:inline">Logout</span>
-        </button>
-      </div>
+        </PopoverTrigger>
+        <PopoverContent className="w-48 p-2 bg-white border border-gray-200 shadow-lg rounded-xl">
+          <div className="px-3 py-2 border-b border-gray-100 mb-1">
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Account</p>
+          </div>
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-3 py-2 text-sm text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all group"
+          >
+            <div className="p-1.5 bg-gray-100 group-hover:bg-red-100 rounded-md transition-colors">
+              <LogOut className="w-4 h-4" />
+            </div>
+            <span className="font-medium">Sign Out</span>
+          </button>
+        </PopoverContent>
+      </Popover>
     </header>
   );
 }

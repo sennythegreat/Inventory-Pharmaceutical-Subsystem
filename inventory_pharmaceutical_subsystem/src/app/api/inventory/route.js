@@ -60,13 +60,20 @@ export async function POST(request) {
       );
     }
 
-    const randomId = `MED${Math.floor(Math.random() * 900000) + 100000}`;
+    // UPDATED: Starting ID logic or sequential counter would go here.
+    // For now, we manually handle the format.
+    const { data: countData } = await supabase
+      .from("medications")
+      .select("id", { count: "exact", head: true });
+    
+    const count = (countData?.length || 0) + 6;
+    const sequentialId = `MED${String(count).padStart(4, "0")}`;
 
     const { data, error } = await supabase
       .from("medications")
       .insert([
         {
-          id: randomId,
+          id: sequentialId,
           name: body.proprietaryName,
           dosage: body.dosage,
           quantity: parseInt(body.quantity, 10) || 0,

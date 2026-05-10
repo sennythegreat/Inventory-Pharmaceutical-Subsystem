@@ -114,7 +114,9 @@ export default function InventoryTable({ data, onRefresh }) {
                   {item.name}
                 </td>
                 <td className="px-6 py-4 text-gray-500">
-                  {item.dosage}
+                  {item.dosage?.toLowerCase().includes("mg") || item.dosage?.toLowerCase().includes("ml") 
+                    ? item.dosage 
+                    : `${item.dosage}mg`}
                 </td>
                 <td className={`px-6 py-4 ${getQtyColor(item.status)}`}>
                   {item.quantity || item.qty || 0}
