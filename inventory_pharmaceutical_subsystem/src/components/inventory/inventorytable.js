@@ -3,12 +3,24 @@
 import { useState } from "react";
 import StatusBadge from "./StatusBadge";
 import { inventoryService } from "../../services/inventoryServices";
-import { Edit2, Trash2, Check, X } from "lucide-react";
+import { Edit2, Trash2, Check, X, Loader2 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export default function InventoryTable({ data, onRefresh }) {
   const [editingItem, setEditingItem] = useState(null);
   const [editForm, setEditForm] = useState({ name: "", dosage: "", price: "", expiry: "" });
   const [isDeleting, setIsDeleting] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const getQtyColor = (status) => {
     if (status === "OUT OF STOCK") return "text-red-500 font-bold";
@@ -17,13 +29,14 @@ export default function InventoryTable({ data, onRefresh }) {
   };
 
   const handleEdit = (item) => {
-    setEditingItem(item.id);
+    setEditingItem(item);
     setEditForm({
       name: item.name,
       dosage: item.dosage,
       price: item.price,
       expiry: item.expiry_date || item.expiry
     });
+    setIsModalOpen(true);
   };
 
   const handleDelete = async (id) => {
@@ -39,13 +52,18 @@ export default function InventoryTable({ data, onRefresh }) {
     }
   };
 
-  const handleSave = async (id) => {
+  const handleSave = async () => {
+    if (!editingItem) return;
+    setIsSaving(true);
     try {
-      await inventoryService.updateMedicineDetails(id, editForm);
+      await inventoryService.updateMedicineDetails(editingItem.id, editForm);
+      setIsModalOpen(false);
       setEditingItem(null);
       onRefresh();
     } catch (err) {
       alert(err.message);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -92,92 +110,45 @@ export default function InventoryTable({ data, onRefresh }) {
                 <td className="px-6 py-4 text-xs text-gray-400 font-mono">
                   {item.id}
                 </td>
-                <td className="px-6 py-4">
-                  {editingItem === item.id ? (
-                    <input 
-                      className="border rounded px-2 py-1 w-full"
-                      value={editForm.name}
-                      onChange={(e) => setEditForm({...editForm, name: e.target.value})}
-                    />
-                  ) : <span className="font-semibold">{item.name}</span>}
+                <td className="px-6 py-4 font-semibold text-gray-900">
+                  {item.name}
                 </td>
-                <td className="px-6 py-4">
-                  {editingItem === item.id ? (
-                    <input 
-                      className="border rounded px-2 py-1 w-full"
-                      value={editForm.dosage}
-                      onChange={(e) => setEditForm({...editForm, dosage: e.target.value})}
-                    />
-                  ) : <span className="text-gray-500">{item.dosage}</span>}
+                <td className="px-6 py-4 text-gray-500">
+                  {item.dosage}
                 </td>
                 <td className={`px-6 py-4 ${getQtyColor(item.status)}`}>
                   {item.quantity || item.qty || 0}
                 </td>
-                <td className="px-6 py-4">
-                  {editingItem === item.id ? (
-                    <input 
-                      type="number"
-                      className="border rounded px-2 py-1 w-full"
-                      value={editForm.price}
-                      onChange={(e) => setEditForm({...editForm, price: e.target.value})}
-                    />
-                  ) : <span className="text-gray-700">₱{Number(item.price).toFixed(2)}</span>}
+                <td className="px-6 py-4 text-gray-700">
+                   ₱{Number(item.price).toFixed(2)}
                 </td>
                 <td className="px-6 py-4 text-gray-600">
-                   {editingItem === item.id ? (
-                    <input 
-                      type="date"
-                      className="border rounded px-2 py-1 w-full text-xs"
-                      value={editForm.expiry}
-                      onChange={(e) => setEditForm({...editForm, expiry: e.target.value})}
-                    />
-                  ) : (item.expiry_date || item.expiry)}
+                  {item.expiry_date || item.expiry}
                 </td>
                 <td className="px-6 py-4">
                   <StatusBadge status={item.status} />
                 </td>
                 <td className="px-6 py-4">
                   <div className="flex gap-3">
-                    {editingItem === item.id ? (
-                      <>
-                        <button 
-                          onClick={() => handleSave(item.id)} 
-                          className="p-1.5 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                          title="Save Changes"
-                        >
-                          <Check size={18} />
-                        </button>
-                        <button 
-                          onClick={() => setEditingItem(null)} 
-                          className="p-1.5 text-gray-400 hover:bg-gray-100 rounded-lg transition-colors"
-                          title="Cancel"
-                        >
-                          <X size={18} />
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <button 
-                          onClick={() => handleEdit(item)} 
-                          className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                          title="Edit Medication"
-                        >
-                          <Edit2 size={18} />
-                        </button>
-                        <button 
-                          disabled={isDeleting === item.id}
-                          onClick={() => handleDelete(item.id)} 
-                          className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
-                          title="Delete Medication"
-                        >
-                          {isDeleting === item.id ? (
-                            <span className="w-[18px] h-[18px] border-2 border-red-600 border-t-transparent rounded-full animate-spin block"></span>
-                          ) : (
-                            <Trash2 size={18} />
-                          )}
-                        </button>
-                      </>
-                    )}
+                    <button 
+                      onClick={() => handleEdit(item)} 
+                      className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                      title="Edit Medication"
+                    >
+                      <Edit2 size={18} />
+                    </button>
+                    <button 
+                      disabled={isDeleting === item.id}
+                      onClick={() => handleDelete(item.id)} 
+                      className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                      title="Delete Medication"
+                    >
+                      {isDeleting === item.id ? (
+                        <span className="w-[18px] h-[18px] border-2 border-red-600 border-t-transparent rounded-full animate-spin block"></span>
+                      ) : (
+                        <Trash2 size={18} />
+                      )}
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -185,6 +156,73 @@ export default function InventoryTable({ data, onRefresh }) {
           )}
         </tbody>
       </table>
+
+      {/* Edit Modal */}
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent className="sm:max-w-[425px] bg-white text-[#111827]">
+          <DialogHeader>
+            <DialogTitle>Edit Medication</DialogTitle>
+            <DialogDescription>
+              Update the details for {editingItem?.name}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="name" className="text-right">Name</Label>
+              <Input
+                id="name"
+                value={editForm.name}
+                onChange={(e) => setEditForm({...editForm, name: e.target.value})}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="dosage" className="text-right">Dosage</Label>
+              <Input
+                id="dosage"
+                value={editForm.dosage}
+                onChange={(e) => setEditForm({...editForm, dosage: e.target.value})}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="price" className="text-right">Price</Label>
+              <Input
+                id="price"
+                type="number"
+                value={editForm.price}
+                onChange={(e) => setEditForm({...editForm, price: e.target.value})}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="expiry" className="text-right">Expiry</Label>
+              <Input
+                id="expiry"
+                type="date"
+                value={editForm.expiry}
+                onChange={(e) => setEditForm({...editForm, expiry: e.target.value})}
+                className="col-span-3"
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-3">
+            <Button variant="outline" onClick={() => setIsModalOpen(false)}>Cancel</Button>
+            <Button 
+              className="bg-blue-600 hover:bg-blue-700 text-white" 
+              onClick={handleSave}
+              disabled={isSaving}
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : "Save Changes"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
