@@ -13,7 +13,7 @@ export async function GET(request) {
 
   try {
     const apiKey = process.env.NEXT_PUBLIC_EXTERNAL_PMS_API_KEY;
-    const baseUrl = "https://pms-backend-kohl.vercel.app/api/v1/external/invoices";
+    const baseUrl = process.env.NEXT_PUBLIC_EXTERNAL_PMS_URL || "https://billing-finance-ashy.vercel.app/api/invoices";
     
     // Construct the URL based on whether an invoiceId is provided
     let url = baseUrl;

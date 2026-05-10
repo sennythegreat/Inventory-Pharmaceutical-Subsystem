@@ -77,9 +77,10 @@ export async function PATCH(request) {
     // Update external invoice release status
     try {
       const apiKey = process.env.NEXT_PUBLIC_EXTERNAL_PMS_API_KEY;
+      const baseUrl = process.env.NEXT_PUBLIC_EXTERNAL_PMS_URL || "https://billing-finance-ashy.vercel.app/api/invoices";
       // Use the human-readable invoice_id (e.g., INV-...) as requested
       const updateId = invoiceId;
-      const externalUrl = `https://pms-backend-kohl.vercel.app/api/v1/external/invoices/${updateId}`;
+      const externalUrl = `${baseUrl}/${updateId}`;
       
       console.log(`Updating external invoice ${updateId} at ${externalUrl}`);
       
