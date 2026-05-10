@@ -12,7 +12,28 @@ export async function PATCH(request, context) {
   try {
     const { id } = await context.params;
     const supabase = createClient();
-    const { quantityToAdd, price, expiry } = await request.json();
+    const body = await request.json();
+
+    if (body.isFullEdit) {
+      // Full edit mode
+      const { name, dosage, price, expiry } = body;
+      
+      const { data, error } = await supabase
+        .from("medications")
+        .update({
+          name,
+          dosage,
+          price: Number.parseFloat(price),
+          expiry
+        })
+        .eq("id", id)
+        .select();
+
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json(data[0]);
+    }
+
+    const { quantityToAdd, price, expiry } = body;
 
     //1. Get current stock
     const { data: currentData, error: fetchError } = await supabase
@@ -51,6 +72,34 @@ export async function PATCH(request, context) {
     }
 
     return NextResponse.json(updatedData[0]);
+  } catch (err) {
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 },
+    );
+  }
+}
+
+export async function DELETE(request, context) {
+  const auth = requireAuth(request);
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
+  }
+
+  try {
+    const { id } = await context.params;
+    const supabase = createClient();
+
+    const { error } = await supabase
+      .from("medications")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true, message: "Medication deleted" });
   } catch (err) {
     return NextResponse.json(
       { error: "Internal Server Error" },

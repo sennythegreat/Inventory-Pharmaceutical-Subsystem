@@ -75,7 +75,7 @@ export default function InventoryPage() {
       </div>
 
       {/* Table - now uses real filtered data */}
-      <InventoryTable data={filtered} />
+      <InventoryTable data={filtered} onRefresh={refresh} />
     </div>
   );
 }

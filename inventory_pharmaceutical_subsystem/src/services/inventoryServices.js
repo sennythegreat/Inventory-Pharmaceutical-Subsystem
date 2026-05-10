@@ -56,4 +56,35 @@ export const inventoryService = {
     }
     return response.json();
   },
+
+  async deleteMedicine(id) {
+    const response = await fetchWithAuth(`/api/inventory/${id}`, {
+      method: "DELETE",
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || "Failed to delete medicine");
+    }
+    return response.json();
+  },
+
+  async updateMedicineDetails(id, medicineData) {
+    const response = await fetchWithAuth(`/api/inventory/${id}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        ...medicineData,
+        isFullEdit: true, // Flag to differentiate from simple restock
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || "Failed to update medicine");
+    }
+    return response.json();
+  },
 };
