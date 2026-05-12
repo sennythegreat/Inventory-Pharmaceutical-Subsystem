@@ -25,7 +25,33 @@ export async function GET(request) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ data: transactions }, { status: 200 });
+    // Group transactions by transaction_id (which is unique per invoice/session)
+    const groupedTransactions = transactions.reduce((acc, current) => {
+      const existing = acc.find(item => item.transaction_id === current.transaction_id);
+      
+      const medicationDetail = {
+        medication_id: current.medication_id,
+        quantity: current.quantity,
+        name: current.medications?.name,
+        dosage: current.medications?.dosage
+      };
+
+      if (existing) {
+        existing.items.push(medicationDetail);
+      } else {
+        acc.push({
+          transaction_id: current.transaction_id,
+          reference_id: current.reference_id,
+          patient_name: current.patient_name, // Assuming this exists or is part of data
+          performed_by: current.performed_by,
+          transaction_date: current.transaction_date,
+          items: [medicationDetail]
+        });
+      }
+      return acc;
+    }, []);
+
+    return NextResponse.json({ data: groupedTransactions }, { status: 200 });
   } catch (err) {
     console.error("Internal Server Error:", err);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
