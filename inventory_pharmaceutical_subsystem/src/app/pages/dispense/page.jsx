@@ -19,7 +19,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import InvoiceDetails from "@/components/dispense/InvoiceDetails";
-import { CheckCircle2, Loader2, Search, Filter, SortAsc, SortDesc } from "lucide-react";
+import { CheckCircle2, Loader2, Search, Filter, SortAsc, SortDesc, ChevronLeft, ChevronRight } from "lucide-react";
 
 export default function DispensePage() {
   const [invoices, setInvoices] = useState([]);
@@ -30,12 +30,19 @@ export default function DispensePage() {
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [isDispensing, setIsDispensing] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   useEffect(() => {
     async function loadInvoices() {
       setLoading(true);
       try {
-        const response = await externalInventoryService.getAllInvoices();
+        // Fetch a large number of invoices to allow client-side searching and status filtering
+        // since we don't know if the external API supports status filtering
+        const response = await externalInventoryService.getAllInvoices(1, 200);
         setInvoices(response.data?.invoices || []);
       } catch (err) {
         console.error("Failed to load invoices:", err);
@@ -99,6 +106,17 @@ export default function DispensePage() {
       const dateB = new Date(b.created_at || b.invoice_date);
       return sortOrder === "asc" ? dateA - dateB : dateB - dateA;
     });
+
+  // Calculate pagination
+  const totalItems = filteredInvoices.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedInvoices = filteredInvoices.slice(startIndex, startIndex + itemsPerPage);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, statusFilter]);
 
   return (
     <div className="p-6 max-w-7xl mx-auto h-[calc(100vh-64px)] flex flex-col gap-6 bg-slate-50/30 overflow-hidden">
@@ -177,7 +195,7 @@ export default function DispensePage() {
           </div>
         ) : (
           <div className="flex flex-col gap-3">
-            {filteredInvoices.map((invoice) => (
+            {paginatedInvoices.map((invoice) => (
               <Card 
                 key={invoice._id || invoice.invoice_id}
                 className="group hover:border-primary/50 transition-all cursor-pointer hover:shadow-sm"
@@ -235,6 +253,46 @@ export default function DispensePage() {
         )}
       </div>
 
+      {/* Pagination Controls */}
+      {!loading && filteredInvoices.length > 0 && (
+        <div className="flex items-center justify-between bg-white p-4 rounded-xl border shadow-sm shrink-0">
+          <p className="text-sm text-muted-foreground">
+            Showing <span className="font-medium">{startIndex + 1}</span> to{" "}
+            <span className="font-medium">
+              {Math.min(startIndex + itemsPerPage, totalItems)}
+            </span>{" "}
+            of <span className="font-medium">{totalItems}</span> results
+          </p>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              disabled={currentPage === 1}
+              className="gap-1"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Previous
+            </Button>
+            <div className="flex items-center gap-1 px-2">
+              <span className="text-sm font-medium">{currentPage}</span>
+              <span className="text-sm text-muted-foreground">/</span>
+              <span className="text-sm text-muted-foreground">{totalPages}</span>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+              disabled={currentPage === totalPages}
+              className="gap-1"
+            >
+              Next
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
+
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="max-w-[90vw] w-full lg:max-w-7xl p-0 overflow-hidden bg-white border-none shadow-2xl">
           <DialogHeader className="sr-only">
@@ -260,7 +318,7 @@ export default function DispensePage() {
                   </Button>
                   {selectedInvoice?.status?.toLowerCase() === 'paid' && (
                     <Button 
-                      onClick={handleDispense} 
+                      onClick={() => setIsConfirmDialogOpen(true)} 
                       disabled={isDispensing}
                       className="gap-2 px-8"
                     >
@@ -275,6 +333,41 @@ export default function DispensePage() {
                 </div>
               </div>
             )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isConfirmDialogOpen} onOpenChange={setIsConfirmDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Confirm Medication Release</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to release the medications for <strong>{selectedInvoice?.patient_name}</strong>? This action will update the inventory and cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-3 mt-4">
+            <Button 
+              variant="outline" 
+              onClick={() => setIsConfirmDialogOpen(false)}
+              disabled={isDispensing}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={async () => {
+                await handleDispense();
+                setIsConfirmDialogOpen(false);
+              }}
+              disabled={isDispensing}
+              className="gap-2"
+            >
+              {isDispensing ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <CheckCircle2 className="h-4 w-4" />
+              )}
+              Confirm Release
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

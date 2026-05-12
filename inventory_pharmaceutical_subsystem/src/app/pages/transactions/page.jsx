@@ -12,10 +12,13 @@ import {
   User,
   Calendar,
   Layers,
-  CheckCircle2
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
@@ -31,15 +34,22 @@ export default function TransactionsPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
 
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 8;
+
   useEffect(() => {
     async function loadTransactions() {
       try {
-        // Fetch external invoices instead of internal transaction logs
-        const response = await fetchWithAuth("/api/dispense/external");
+        // Fetch external invoices with a high limit to ensure we see many records
+        const response = await fetchWithAuth("/api/dispense/external?limit=1000");
         const result = await response.json();
         
         // Filter to show ONLY released prescriptions (is_released: true)
         const releasedInvoices = (result.data?.invoices || []).filter(inv => inv.is_released === true);
+        
+        // Sort by released date descending
+        releasedInvoices.sort((a, b) => new Date(b.released_at || b.updated_at) - new Date(a.released_at || a.updated_at));
         
         setTransactions(releasedInvoices);
       } catch (err) {
@@ -61,6 +71,17 @@ export default function TransactionsPage() {
     tx.patient_name?.toLowerCase().includes(search.toLowerCase()) ||
     tx.items?.some(item => item.medicineName?.toLowerCase().includes(search.toLowerCase()))
   );
+
+  // Pagination Logic
+  const totalItems = filteredTransactions.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const paginatedTransactions = filteredTransactions.slice(startIndex, startIndex + itemsPerPage);
+
+  // Reset to page 1 on search
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search]);
 
   return (
     <div className="p-6 max-w-7xl mx-auto h-[calc(100vh-64px)] flex flex-col gap-6 bg-slate-50/30 overflow-hidden">
@@ -101,7 +122,7 @@ export default function TransactionsPage() {
           </div>
         ) : (
           <div className="flex flex-col gap-3">
-            {filteredTransactions.map((tx) => (
+            {paginatedTransactions.map((tx) => (
               <Card 
                 key={tx.invoice_id} 
                 className="group hover:border-primary/30 transition-all cursor-pointer"
@@ -155,6 +176,44 @@ export default function TransactionsPage() {
           </div>
         )}
       </div>
+
+      {/* Pagination Footer */}
+      {!loading && filteredTransactions.length > 0 && (
+        <div className="flex items-center justify-between bg-white p-4 rounded-xl border shadow-sm shrink-0">
+          <p className="text-sm text-muted-foreground">
+            Showing <span className="font-medium">{startIndex + 1}</span> to{" "}
+            <span className="font-medium">
+              {Math.min(startIndex + itemsPerPage, totalItems)}
+            </span>{" "}
+            of <span className="font-medium">{totalItems}</span> transactions
+          </p>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              disabled={currentPage === 1}
+              className="gap-1"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Previous
+            </Button>
+            <div className="flex items-center gap-2 px-2">
+              <span className="text-sm font-medium">{currentPage} / {totalPages}</span>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+              disabled={currentPage === totalPages}
+              className="gap-1"
+            >
+              Next
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Detail Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
