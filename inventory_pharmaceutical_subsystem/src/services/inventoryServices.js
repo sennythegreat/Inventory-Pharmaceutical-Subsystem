@@ -1,17 +1,12 @@
-// src/services/inventoryServices.js
-// ─────────────────────────────────────────────────────────────────────────────
-// CHANGE: replaced fetch() with fetchWithAuth() on all three methods.
-// fetchWithAuth automatically:
-//   • adds Authorization: Bearer <token> from localStorage
-//   • redirects to /login on a 401 response
-// Everything else is identical to your original code.
-// ─────────────────────────────────────────────────────────────────────────────
+//fetchWithAuth automatically:
+//   adds Authorization: Bearer <token> from localStorage
+//   redirects to /login on a 401 response
 
 import { fetchWithAuth } from "@/lib/fetchWithAuth";
 
 export const inventoryService = {
   async getAllInventory() {
-    const response = await fetchWithAuth("/api/inventory"); // ← was fetch()
+    const response = await fetchWithAuth("/api/inventory");
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.error || "Failed to fetch inventory");
@@ -21,7 +16,6 @@ export const inventoryService = {
 
   async addMedicine(medicineData) {
     const response = await fetchWithAuth("/api/inventory", {
-      // ← was fetch()
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -77,7 +71,7 @@ export const inventoryService = {
       },
       body: JSON.stringify({
         ...medicineData,
-        isFullEdit: true, // Flag to differentiate from simple restock
+        isFullEdit: true,
       }),
     });
 
