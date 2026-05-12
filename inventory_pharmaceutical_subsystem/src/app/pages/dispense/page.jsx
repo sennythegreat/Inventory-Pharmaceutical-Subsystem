@@ -24,6 +24,7 @@ import { CheckCircle2, Loader2, Search, Filter, SortAsc, SortDesc, ChevronLeft, 
 
 export default function DispensePage() {
   const [invoices, setInvoices] = useState([]);
+  const [localTransactionIds, setLocalTransactionIds] = useState(new Set());
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -43,20 +44,30 @@ export default function DispensePage() {
   const itemsPerPage = 10;
 
   useEffect(() => {
-    async function loadInvoices() {
+    async function loadData() {
       setLoading(true);
       try {
-        // Fetch a large number of invoices to allow client-side searching and status filtering
-        // since we don't know if the external API supports status filtering
-        const response = await externalInventoryService.getAllInvoices(1, 200);
-        setInvoices(response.data?.invoices || []);
+        // Fetch both external invoices and local transactions
+        const [invoiceResponse, txnResponse] = await Promise.all([
+          externalInventoryService.getAllInvoices(1, 200),
+          fetch('/api/transactions?limit=1000').then(res => res.json())
+        ]);
+
+        setInvoices(invoiceResponse.data?.invoices || []);
+        
+        // Extract reference_ids (invoice_ids) that already exist in our database
+        // Use a Set for O(1) lookup performance
+        const txns = txnResponse.data || [];
+        const existingIds = new Set(txns.map(t => t.reference_id));
+        setLocalTransactionIds(existingIds);
+
       } catch (err) {
-        console.error("Failed to load invoices:", err);
+        console.error("Failed to load data:", err);
       } finally {
         setLoading(false);
       }
     }
-    loadInvoices();
+    loadData();
   }, []);
 
   const handleOpenInvoice = (invoice) => {
@@ -119,8 +130,12 @@ export default function DispensePage() {
 
   const filteredInvoices = invoices
     .filter(inv => {
-      // Show ONLY invoices where is_released is FALSE
+      // 1. Hide invoices where the external system says they are already released
       if (inv.is_released === true) return false;
+
+      // 2. Hide invoices that already exist in our LOCAL transaction database
+      // This prevents duplicates if the external system hasn't updated its status yet
+      if (localTransactionIds.has(inv.invoice_id)) return false;
 
       const matchesSearch = 
         inv.invoice_id?.toString().toLowerCase().includes(search.toLowerCase()) ||
