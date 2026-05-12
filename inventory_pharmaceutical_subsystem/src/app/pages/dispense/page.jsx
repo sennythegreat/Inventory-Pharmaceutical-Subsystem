@@ -18,8 +18,9 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { Badge } from "@/components/ui/badge";
 import InvoiceDetails from "@/components/dispense/InvoiceDetails";
-import { CheckCircle2, Loader2, Search, Filter, SortAsc, SortDesc, ChevronLeft, ChevronRight } from "lucide-react";
+import { CheckCircle2, Loader2, Search, Filter, SortAsc, SortDesc, ChevronLeft, ChevronRight, Receipt } from "lucide-react";
 
 export default function DispensePage() {
   const [invoices, setInvoices] = useState([]);
@@ -31,6 +32,11 @@ export default function DispensePage() {
   const [isDispensing, setIsDispensing] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
+  
+  // Receipt states
+  const [receipts, setReceipts] = useState([]);
+  const [loadingReceipts, setLoadingReceipts] = useState(false);
+  const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -56,6 +62,29 @@ export default function DispensePage() {
   const handleOpenInvoice = (invoice) => {
     setSelectedInvoice(invoice);
     setIsModalOpen(true);
+  };
+
+  const handleViewReceipt = async () => {
+    if (!selectedInvoice) return;
+    setLoadingReceipts(true);
+    setIsReceiptModalOpen(true);
+    try {
+      const response = await externalInventoryService.getReceiptsByInvoiceId(selectedInvoice.invoice_id);
+      
+      if (response.status === "error") {
+        console.error("Receipt error detail:", response);
+        setReceipts([]);
+        return;
+      }
+
+      // Handle both single receipt object or array of receipts
+      const data = response.data?.receipts || (response.data ? [response.data] : []);
+      setReceipts(data);
+    } catch (err) {
+      console.error("Failed to load receipts:", err);
+    } finally {
+      setLoadingReceipts(false);
+    }
   };
 
   const handleDispense = async () => {
@@ -316,6 +345,14 @@ export default function DispensePage() {
                   >
                     Close
                   </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={handleViewReceipt}
+                    className="gap-2"
+                  >
+                    <Receipt className="h-4 w-4" />
+                    View Receipt
+                  </Button>
                   {selectedInvoice?.status?.toLowerCase() === 'paid' && (
                     <Button 
                       onClick={() => setIsConfirmDialogOpen(true)} 
@@ -333,6 +370,26 @@ export default function DispensePage() {
                 </div>
               </div>
             )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isReceiptModalOpen} onOpenChange={setIsReceiptModalOpen}>
+        <DialogContent className="sm:max-w-[550px] p-0 overflow-hidden border-none shadow-2xl">
+          <DialogHeader className="p-6 pb-0">
+            <DialogTitle className="flex items-center gap-2 text-xl">
+              <Receipt className="h-5 w-5 text-primary" />
+              Payment Verification
+            </DialogTitle>
+            <DialogDescription>
+              Verify the official receipt from the billing subsystem for verification.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="p-6">
+            <ReceiptView receipts={receipts} loading={loadingReceipts} />
+          </div>
+          <div className="p-4 bg-slate-50 border-t flex justify-end">
+            <Button onClick={() => setIsReceiptModalOpen(false)}>Close</Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -371,6 +428,99 @@ export default function DispensePage() {
           </div>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+function ReceiptView({ receipts, loading }) {
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center p-12">
+        <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+        <p className="text-muted-foreground">Fetching receipt details...</p>
+      </div>
+    );
+  }
+
+  if (!receipts || receipts.length === 0) {
+    return (
+      <div className="text-center p-12 bg-slate-50 rounded-lg border border-dashed">
+        <Receipt className="h-12 w-12 text-slate-300 mx-auto mb-4" />
+        <p className="text-slate-600 font-medium">No receipts found for this invoice.</p>
+        <p className="text-sm text-slate-400 mt-1">Payment may not have been processed yet.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6 max-h-[70vh] overflow-y-auto pr-2">
+      {receipts.map((receipt, idx) => (
+        <div key={idx} className="bg-white border rounded-xl overflow-hidden shadow-sm">
+          {/* Receipt Header */}
+          <div className="bg-slate-900 text-white p-4 flex justify-between items-center text-xs uppercase tracking-widest font-bold">
+            <span>Official Receipt</span>
+            <span>{receipt.receipt_id}</span>
+          </div>
+
+          <div className="p-6 space-y-6">
+            {/* Summary Details */}
+            <div className="grid grid-cols-2 gap-8 text-sm">
+              <div className="space-y-4">
+                <div>
+                  <p className="text-xs text-slate-400 uppercase font-bold tracking-wider mb-1">Patient</p>
+                  <p className="font-bold text-slate-800">{receipt.patient_name}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-400 uppercase font-bold tracking-wider mb-1">Issued Date</p>
+                  <p className="font-medium text-slate-800">{new Date(receipt.issued_at).toLocaleDateString()}</p>
+                </div>
+              </div>
+              <div className="space-y-4 text-right">
+                <div>
+                  <p className="text-xs text-slate-400 uppercase font-bold tracking-wider mb-1">Payment Method</p>
+                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-100 uppercase text-[10px]">
+                    {receipt.payment_method}
+                  </Badge>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-400 uppercase font-bold tracking-wider mb-1">Payment Status</p>
+                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-100 uppercase text-[10px]">
+                    {receipt.status}
+                  </Badge>
+                </div>
+              </div>
+            </div>
+
+            {/* Items Table */}
+            <div className="border rounded-lg overflow-hidden">
+              <table className="w-full text-sm">
+                <thead className="bg-slate-50 border-b">
+                  <tr>
+                    <th className="text-left p-3 font-semibold text-slate-600">Service/Medicine Description</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {receipt.items?.map((item, i) => (
+                    <tr key={i}>
+                      <td className="p-3 text-slate-700 font-medium">{item.serviceName}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Total Section */}
+            <div className="flex justify-end pt-4 border-t border-dashed">
+              <div className="text-right space-y-1">
+                <p className="text-xs text-slate-400 uppercase font-bold tracking-wider">Total Amount Paid</p>
+                <p className="text-2xl font-black text-slate-900 font-mono">
+                  ₱{receipt.amount_paid?.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

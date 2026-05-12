@@ -24,5 +24,16 @@ export const externalInventoryService = {
         throw new Error("Invoice not found in external system");
     }
     return response.json();
+  },
+
+  /**
+   * Fetch receipts for a specific invoice from the external system
+   */
+  async getReceiptsByInvoiceId(invoiceId) {
+    const response = await fetchWithAuth(`/api/dispense/external?receipts=true&invoiceId=${invoiceId}`);
+    if (!response.ok) {
+        return { status: "error", data: [] };
+    }
+    return response.json();
   }
 };

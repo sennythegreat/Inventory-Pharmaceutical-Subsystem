@@ -20,8 +20,11 @@ export async function fetchWithAuth(url, options = {}) {
 
   const response = await fetch(url, { ...options, headers });
 
+  // Only redirect to login if the request was NOT for the external proxy
+  const isExternalProxy = url.includes("/api/dispense/external");
+
   //Auto-redirect on 401 (token expired or missing)
-  if (response.status === 401 && typeof window !== "undefined") {
+  if (response.status === 401 && !isExternalProxy && typeof window !== "undefined") {
     localStorage.removeItem("auth_token");
     localStorage.removeItem("auth_user");
     window.location.href = "/login";
