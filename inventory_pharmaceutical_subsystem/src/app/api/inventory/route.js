@@ -1,20 +1,18 @@
 import { NextResponse } from "next/server";
-import { withAuth } from "@/lib/withAuth"; //updated import path
+import { withAuth } from "@/lib/withAuth";
 import { requireAuth } from "@/lib/auth";
 import { createClient } from "@/lib/client";
+import { computeStatus } from "@/app/api/inventory/[id]/route";
 
 export async function GET(request) {
-  //Authentication
   const guard = withAuth(request);
-  if (guard) return guard; //returns 401 JSON if token missing/invalid
+  if (guard) return guard;
 
-  //Get user info from the token (for logging / metadata)
   const { payload } = requireAuth(request);
   console.log(
     `[GET /api/inventory] user=${payload.username} role=${payload.role}`,
   );
 
-  //Fetch data from Supabase
   const supabase = createClient();
   const { data, error } = await supabase
     .from("medications")
@@ -39,7 +37,6 @@ export async function GET(request) {
 }
 
 export async function POST(request) {
-  //Authentication
   const guard = withAuth(request);
   if (guard) return guard;
 
@@ -60,14 +57,19 @@ export async function POST(request) {
       );
     }
 
-    // UPDATED: Starting ID logic or sequential counter would go here.
-    // For now, we manually handle the format.
+    //Sequential ID generation
     const { data: countData } = await supabase
       .from("medications")
       .select("id", { count: "exact", head: true });
-    
+
     const count = (countData?.length || 0) + 6;
     const sequentialId = `MED${String(count).padStart(4, "0")}`;
+
+    const quantity = parseInt(body.quantity, 10) || 0;
+    const expiry = body.expiry;
+
+    //computeStatus will determine if the medicine is "In Stock", "Low Stock", or "Expired"
+    const status = computeStatus(quantity, expiry);
 
     const { data, error } = await supabase
       .from("medications")
@@ -76,10 +78,10 @@ export async function POST(request) {
           id: sequentialId,
           name: body.proprietaryName,
           dosage: body.dosage,
-          quantity: parseInt(body.quantity, 10) || 0,
+          quantity,
           price: parseFloat(body.price) || 0,
-          expiry: body.expiry,
-          status: "SUFFICIENT",
+          expiry,
+          status,
         },
       ])
       .select();
