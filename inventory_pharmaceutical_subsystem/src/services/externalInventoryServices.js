@@ -5,10 +5,10 @@ import { fetchWithAuth } from "@/lib/fetchWithAuth";
  */
 export const externalInventoryService = {
   /**
-   * Fetch all invoices from the external system
+   * Fetch all invoices from the external system with optional pagination
    */
-  async getAllInvoices() {
-    const response = await fetchWithAuth("/api/dispense/external");
+  async getAllInvoices(page = 1, limit = 127) {
+    const response = await fetchWithAuth(`/api/dispense/external?page=${page}&limit=${limit}`);
     if (!response.ok) {
         return { status: "error", data: [] };
     }
