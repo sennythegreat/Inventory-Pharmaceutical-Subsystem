@@ -110,18 +110,7 @@ export default function LoginPage() {
           </button>
         </form>
 
-        {/* Register link — NEW */}
-        <div className="mt-6 pt-5 border-t border-gray-100 text-center">
-          <p className="text-xs text-gray-400">
-            Are you a pharmacist?{" "}
-            <Link
-              href="/register"
-              className="text-gray-700 font-semibold hover:underline"
-            >
-              Register here
-            </Link>
-          </p>
-        </div>
+        
 
       </div>
     </div>

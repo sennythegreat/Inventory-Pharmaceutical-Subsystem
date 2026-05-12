@@ -9,7 +9,7 @@ if (!JWT_SECRET) {
 
 const EXTERNAL_SAFE_API_KEY = process.env.EXTERNAL_INVENTORY_API_KEY;
 
-//Token helpers (unchanged)
+//Token helpers
 /**JWT expires in 8 hours */
 export function signToken(payload) {
   return jwt.sign(payload, JWT_SECRET, { expiresIn: "8h" });
@@ -20,12 +20,6 @@ export function verifyToken(token) {
   return jwt.verify(token, JWT_SECRET);
 }
 
-/**
- * Extract + verify the Bearer token or x-api-key from a Next.js App Router Request object.
- * Returns:
- *   { ok: true,  payload: { sub, username, role, iat, exp } }
- *   { ok: false, error: string, status: 401 }
- */
 export function requireAuth(request) {
   const authHeader = request.headers.get("authorization") ?? "";
   const apiKeyHeader = request.headers.get("x-api-key");
@@ -59,7 +53,8 @@ export function requireAuth(request) {
   // 3. Unauthorized
   return {
     ok: false,
-    error: "Authentication required. Provide a valid 'x-api-key' or 'Authorization: Bearer <token>'",
+    error:
+      "Authentication required. Provide a valid 'x-api-key' or 'Authorization: Bearer <token>'",
     status: 401,
   };
 }
@@ -103,12 +98,16 @@ export async function verifyCredentials(username, password) {
 
 /**
  * Log in via the external subsystem API.
- * 
- * @param {string} username 
- * @param {string} password 
- * @param {string} subsystem 
+ *
+ * @param {string} username
+ * @param {string} password
+ * @param {string} subsystem
  */
-export async function externalSubsystemLogin(username, password, subsystem = "Inventory") {
+export async function externalSubsystemLogin(
+  username,
+  password,
+  subsystem = "Inventory",
+) {
   const apiUrl = process.env.AUTH_EXTERNAL_API_URL;
   const subsystemKey = process.env.AUTHENTICATION_API_KEY;
 
@@ -133,7 +132,10 @@ export async function externalSubsystemLogin(username, password, subsystem = "In
     const data = await response.json();
 
     if (!response.ok) {
-      return { ok: false, error: data.message || data.error || "External login failed." };
+      return {
+        ok: false,
+        error: data.message || data.error || "External login failed.",
+      };
     }
 
     // Return the user data from the external subsystem
@@ -148,6 +150,9 @@ export async function externalSubsystemLogin(username, password, subsystem = "In
     };
   } catch (error) {
     console.error("External login error:", error);
-    return { ok: false, error: "Authentication service is currently unavailable." };
+    return {
+      ok: false,
+      error: "Authentication service is currently unavailable.",
+    };
   }
 }
