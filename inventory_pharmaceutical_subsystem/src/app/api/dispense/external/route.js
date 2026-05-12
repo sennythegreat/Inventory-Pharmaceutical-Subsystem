@@ -10,6 +10,8 @@ export async function GET(request) {
 
   const { searchParams } = new URL(request.url);
   const invoiceId = searchParams.get("invoiceId");
+  const page = searchParams.get("page") || "1";
+  const limit = searchParams.get("limit") || "10";
 
   try {
     const apiKey = process.env.NEXT_PUBLIC_EXTERNAL_PMS_API_KEY;
@@ -18,9 +20,9 @@ export async function GET(request) {
     // Construct the URL based on whether an invoiceId is provided
     let url = baseUrl;
     if (invoiceId) {
-      // Assuming the external API might support something like ?invoiceId=ID 
-      // or if it returns all, we filter. If the external API has a specific endpoint for single, use that.
       url = `${baseUrl}?invoiceId=${invoiceId}`;
+    } else {
+      url = `${baseUrl}?page=${page}&limit=${limit}`;
     }
 
     const response = await fetch(url, {
