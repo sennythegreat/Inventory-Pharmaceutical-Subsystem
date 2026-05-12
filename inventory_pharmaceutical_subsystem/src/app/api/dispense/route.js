@@ -129,13 +129,14 @@ export async function PATCH(request) {
            console.error(`Stock update failed for ${item.medication_id}:`, stockError);
        }
 
-       // Insert into transactions table
+       // Insert into transactions table with updated schema
        await supabase.from("transactions").insert({
-          type: "DISPENSE",
+          transaction_id: `TXN-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
           medication_id: item.medication_id,
           quantity: item.quantity,
           performed_by: payload.username,
-          reference_id: invoiceId
+          reference_id: invoiceId,
+          transaction_date: new Date().toISOString()
        });
     }
 

@@ -160,7 +160,7 @@ export default function TransactionsPage() {
               >
                 <CardContent className="p-4 flex items-center justify-between">
                   <div className="flex items-center gap-6 flex-1">
-                    {/* Icon/Type */}
+                    {/* Icon */}
                     <div className="p-2 rounded-full bg-emerald-50 text-emerald-600">
                       <CheckCircle2 className="h-5 w-5" />
                     </div>
@@ -257,7 +257,7 @@ export default function TransactionsPage() {
           
           {selectedTransaction && (
             <div className="space-y-4 py-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="flex justify-between items-center text-sm">
                 <div className="space-y-1">
                   <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Status</p>
                   <Badge className="bg-emerald-100 text-emerald-700">
